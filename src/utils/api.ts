@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:3001';
+const API_BASE_URL = 'https://13.233.230.217:3001';
 
 export interface FolderData {
   name: string;

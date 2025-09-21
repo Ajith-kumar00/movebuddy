@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test MoveBuddy API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #2BD17E;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #25b870;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .image-preview {
+            max-width: 200px;
+            max-height: 200px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Test MoveBuddy API Integration</h1>
+        
+        <form id="movieForm">
+            <div class="form-group">
+                <label for="name">Movie Name:</label>
+                <input type="text" id="name" name="name" placeholder="Enter movie name">
+            </div>
+            
+            <div class="form-group">
+                <label for="title">Title *:</label>
+                <input type="text" id="title" name="title" placeholder="Enter title" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <textarea id="description" name="description" rows="3" placeholder="Enter description"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="publishingYear">Publishing Year:</label>
+                <input type="number" id="publishingYear" name="publishingYear" placeholder="Enter year" min="1900" max="2025">
+            </div>
+            
+            <div class="form-group">
+                <label for="image">Image:</label>
+                <input type="file" id="image" name="image" accept="image/*">
+                <div id="imagePreview"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="userId">User ID:</label>
+                <input type="text" id="userId" name="userId" value="test-user-123" placeholder="Enter user ID">
+            </div>
+            
+            <button type="submit">Create Movie</button>
+            <button type="button" onclick="getAllMovies()">Get All Movies</button>
+            <button type="button" onclick="getStats()">Get Statistics</button>
+        </form>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'http://localhost:3001';
+        let imageBase64 = '';
+
+        // Compress image function
+        function compressImage(file, maxWidth = 800, quality = 0.8) {
+            return new Promise((resolve) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
+                img.onload = function() {
+                    let { width, height } = img;
+                    if (width > maxWidth) {
+                        height = (height * maxWidth) / width;
+                        width = maxWidth;
+                    }
+                    
+                    canvas.width = width;
+                    canvas.height = height;
+                    
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', quality);
+                    resolve(compressedBase64);
+                };
+                
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        // Handle image upload and convert to base64
+        document.getElementById('image').addEventListener('change', async function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Check file size (max 5MB)
+                if (file.size > 5 * 1024 * 1024) {
+                    showResult('error', 'Image size must be less than 5MB');
+                    return;
+                }
+                
+                try {
+                    // Compress image before converting to base64
+                    imageBase64 = await compressImage(file);
+                    document.getElementById('imagePreview').innerHTML = 
+                        `<img src="${imageBase64}" class="image-preview" alt="Preview">`;
+                    
+                    // Show file size info
+                    const compressedSize = Math.round((imageBase64.length * 3) / 4);
+                    const formatSize = (bytes) => {
+                        if (bytes === 0) return '0 Bytes';
+                        const k = 1024;
+                        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                        const i = Math.floor(Math.log(bytes) / Math.log(k));
+                        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+                    };
+                    
+                    document.getElementById('imagePreview').innerHTML += 
+                        `<p style="font-size: 12px; color: #666; margin-top: 5px;">
+                            ${formatSize(file.size)} → ${formatSize(compressedSize)} (compressed)
+                        </p>`;
+                } catch (error) {
+                    showResult('error', 'Failed to process image: ' + error.message);
+                }
+            }
+        });
+
+        // Handle form submission
+        document.getElementById('movieForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const movieData = {
+                name: formData.get('name') || formData.get('title'),
+                title: formData.get('title'),
+                description: formData.get('description'),
+                publishingYear: formData.get('publishingYear') ? parseInt(formData.get('publishingYear')) : undefined,
+                image: imageBase64,
+                userId: formData.get('userId'),
+                status: 'pending',
+                tags: ['movie', 'entertainment'],
+                estimatedCost: 0,
+                actualCost: 0
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/folders`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(movieData)
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResult('success', `Movie created successfully! ID: ${result._id}`);
+                    console.log('Success:', result);
+                } else {
+                    showResult('error', `Error: ${result.message || 'Failed to create movie'}`);
+                    console.error('Error:', result);
+                }
+            } catch (error) {
+                showResult('error', `Network Error: ${error.message}`);
+                console.error('Error:', error);
+            }
+        });
+
+        // Get all movies
+        async function getAllMovies() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/folders`);
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResult('success', `Found ${result.total} movies. First few: ${JSON.stringify(result.folders.slice(0, 3), null, 2)}`);
+                } else {
+                    showResult('error', `Error: ${result.message || 'Failed to fetch movies'}`);
+                }
+            } catch (error) {
+                showResult('error', `Network Error: ${error.message}`);
+            }
+        }
+
+        // Get statistics
+        async function getStats() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/folders/stats`);
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showResult('success', `Statistics: ${JSON.stringify(result, null, 2)}`);
+                } else {
+                    showResult('error', `Error: ${result.message || 'Failed to fetch statistics'}`);
+                }
+            } catch (error) {
+                showResult('error', `Network Error: ${error.message}`);
+            }
+        }
+
+        function showResult(type, message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${type}`;
+            resultDiv.innerHTML = `<pre>${message}</pre>`;
+        }
+    </script>
+</body>
+</html>

@@ -21,7 +21,7 @@ export class FoldersService {
   }
 
   async getmovielist(userId?: string, page: number = 1, limit: number = 10): Promise<{
-    movies: Folder[];
+    folders: Folder[];
     total: number;
     page: number;
     totalPages: number;
@@ -35,7 +35,7 @@ export class FoldersService {
 
       const skip = (page - 1) * limit;
 
-      const [movies, total] = await Promise.all([
+      const [folders, total] = await Promise.all([
         this.folderModel
           .find(query)
           .sort({ createdAt: -1 })
@@ -46,7 +46,7 @@ export class FoldersService {
       ]);
 
       return {
-        movies,
+        folders,
         total,
         page,
         totalPages: Math.ceil(total / limit),

@@ -11,7 +11,28 @@ export interface FolderData {
   tags?: string[];
   estimatedCost?: number;
   actualCost?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
+}
+
+export interface Folder extends FolderData {
+  _id: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FolderListResponse {
+  folders: Folder[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface FolderStats {
+  total: number;
+  byStatus: Record<string, number>;
+  byYear: Record<string, number>;
+  totalCost: number;
 }
 
 export interface ApiResponse<T> {
@@ -22,7 +43,7 @@ export interface ApiResponse<T> {
 }
 
 export const folderApi = {
-  async create(folderData: FolderData): Promise<ApiResponse<any>> {
+  async create(folderData: FolderData): Promise<ApiResponse<Folder>> {
     try {
       const response = await fetch(`${API_BASE_URL}/folders`, {
         method: 'POST',
@@ -59,7 +80,7 @@ export const folderApi = {
     status?: string;
     page?: number;
     limit?: number;
-  }): Promise<ApiResponse<any>> {
+  }): Promise<ApiResponse<FolderListResponse>> {
     try {
       const queryParams = new URLSearchParams();
       if (params?.userId) queryParams.append('userId', params.userId);
@@ -94,7 +115,7 @@ export const folderApi = {
     userId?: string;
     page?: number;
     limit?: number;
-  }): Promise<ApiResponse<any>> {
+  }): Promise<ApiResponse<FolderListResponse>> {
     try {
       const queryParams = new URLSearchParams();
       if (params?.userId) queryParams.append('userId', params.userId);
@@ -124,7 +145,7 @@ export const folderApi = {
     }
   },
 
-  async getById(id: string): Promise<ApiResponse<any>> {
+  async getById(id: string): Promise<ApiResponse<Folder>> {
     try {
       const response = await fetch(`${API_BASE_URL}/folders/${id}`);
       
@@ -149,7 +170,7 @@ export const folderApi = {
     }
   },
 
-  async update(id: string, folderData: Partial<FolderData>): Promise<ApiResponse<any>> {
+  async update(id: string, folderData: Partial<FolderData>): Promise<ApiResponse<Folder>> {
     try {
       const response = await fetch(`${API_BASE_URL}/folders/${id}`, {
         method: 'PATCH',
@@ -181,7 +202,7 @@ export const folderApi = {
     }
   },
 
-  async delete(id: string): Promise<ApiResponse<any>> {
+  async delete(id: string): Promise<ApiResponse<void>> {
     try {
       const response = await fetch(`${API_BASE_URL}/folders/${id}`, {
         method: 'DELETE'
@@ -207,7 +228,7 @@ export const folderApi = {
     }
   },
 
-  async search(query: string, userId?: string): Promise<ApiResponse<any>> {
+  async search(query: string, userId?: string): Promise<ApiResponse<FolderListResponse>> {
     try {
       const queryParams = new URLSearchParams();
       queryParams.append('q', query);
@@ -236,7 +257,7 @@ export const folderApi = {
     }
   },
 
-  async getByYear(year: number, userId?: string): Promise<ApiResponse<any>> {
+  async getByYear(year: number, userId?: string): Promise<ApiResponse<FolderListResponse>> {
     try {
       const queryParams = new URLSearchParams();
       if (userId) queryParams.append('userId', userId);
@@ -264,7 +285,7 @@ export const folderApi = {
     }
   },
 
-  async getStats(userId?: string): Promise<ApiResponse<any>> {
+  async getStats(userId?: string): Promise<ApiResponse<FolderStats>> {
     try {
       const queryParams = new URLSearchParams();
       if (userId) queryParams.append('userId', userId);

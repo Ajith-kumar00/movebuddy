@@ -4,24 +4,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { folderApi } from "../../utils/api";
-
-interface Movie {
-  _id: string;
-  name: string;
-  title: string;
-  publishingYear?: number;
-  image?: string;
-  userId: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-}
+import { folderApi, Folder } from "../../utils/api";
 
 
 
 const MyMove = () => {
-  const [movies, setMovies] = useState<Movie[]>([]);
+  const [movies, setMovies] = useState<Folder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -52,7 +40,7 @@ const MyMove = () => {
       });
 
       if (result.success && result.data) {
-        setMovies(result.data.movies || []);
+        setMovies(result.data.folders || []);
         setTotalPages(result.data.totalPages || 1);
         setTotalMovies(result.data.total || 0);
         setCurrentPage(result.data.page || 1);

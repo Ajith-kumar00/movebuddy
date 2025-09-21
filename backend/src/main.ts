@@ -14,13 +14,12 @@ async function bootstrap() {
 
   // Enable CORS
   app.enableCors({
-    origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['http://localhost:3000', 'http://localhost:3001'],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    origin: true,          
+    methods: '*',         
+    allowedHeaders: '*',   
   });
 
-  // Set global prefix for API routes
-  app.setGlobalPrefix('api');
+  
 
   // Global validation pipe
   app.useGlobalPipes(new ValidationPipe({
@@ -37,12 +36,13 @@ async function bootstrap() {
     .addTag('folders')
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  SwaggerModule.setup('api', app, document);
+  // SwaggerModule.setup('api/docs', app, document);
 
-  // Health check endpoint
-  app.getHttpAdapter().get('/health', (req, res) => {
-    res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
-  });
+  // // Health check endpoint
+  // app.getHttpAdapter().get('/health', (req, res) => {
+  //   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+  // });
 
   const port = process.env.PORT || 3001;
   await app.listen(port);
